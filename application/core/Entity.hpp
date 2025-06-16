@@ -1,0 +1,26 @@
+#pragma once
+#include "Scripting/Script.hpp"
+#include <vector>
+#include <stdint.h>
+#include <string>
+#include <memory>
+
+class Entity
+{
+private:
+    std::string name;
+private:
+    void* data;
+    uint64_t data_size;
+    
+public:
+    Entity(std::string name);
+    std::vector<std::unique_ptr<Script>> scripts;
+
+    void SetName(char* new_name);
+    std::string GetName() const;
+
+    void AddScript(std::string file);
+
+    void ExecuteAll();
+};
