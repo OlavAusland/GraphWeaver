@@ -2,8 +2,20 @@
 #include <string>
 #include <sys/stat.h>
 #include <regex>
-
 #include "Script.hpp"
+
+static Script* active_script;
+
+
+Script* GetExecutingScript()
+{
+    return active_script;
+}
+
+void Script::SetExecutingScript(Script* script) const
+{
+    active_script = script;
+}
 
 Script::Script(std::string file)
     : file(file), is_active(true)

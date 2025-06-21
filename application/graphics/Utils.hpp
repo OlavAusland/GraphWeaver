@@ -24,9 +24,11 @@ namespace GraphWeaver
     } Vec4;
     #pragma pack(pop)
 
+    #pragma pack(push, 1)
     typedef struct
     {
         float r, g, b, a;
     } Color;
+    #pragma pack(pop)
 }
 

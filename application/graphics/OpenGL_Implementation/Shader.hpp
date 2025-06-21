@@ -9,6 +9,7 @@
 class Shader
 {
 private:
+public:
     unsigned int shader_program;
 
     unsigned int vertex_shader;
@@ -16,6 +17,7 @@ private:
 
     std::unordered_map<std::string, unsigned int> uniform_map;
 private:
+public:
     struct stat vertex_info;
     std::string vertex_file;
 
@@ -29,9 +31,13 @@ public:
     void SetActive();
     unsigned int GetProgram() const;
     
+    void SetUniform1f(std::string name, float value);
+    void SetUniform2f(std::string name, GraphWeaver::Vec2 value);
     void SetUniform3f(std::string name, GraphWeaver::Vec3 value);
     void SetUniform4f(std::string name, GraphWeaver::Vec4 value);
     void SetUniformMatrix4fv(std::string name, glm::mat4 value);
+
+    Shader& operator=(const Shader&);
 private:
     bool HasChanged();
     int Compile(const std::string& file, unsigned int shader);

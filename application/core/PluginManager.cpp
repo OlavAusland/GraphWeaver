@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <filesystem>
 #include <regex>
+#include "imgui.h"
 
 std::string PluginManager::plugin_path;
 std::vector<Plugin> PluginManager::plugins;
@@ -32,6 +33,9 @@ int PluginManager::AddPlugin(std::string filename)
 
 void PluginManager::Update()
 {
+
+    ImGui::Begin("Plugins");
+
     for(Plugin& plugin : plugins)
     {
         if(plugin.HasChanged() || plugin.need_reload)
@@ -39,7 +43,23 @@ void PluginManager::Update()
             //plugin.Unload();
             plugin.Load();
         }
+
+        if(ImGui::Button(plugin.plugin_name.c_str(), ImVec2(-1, 25)))
+        {
+            if(!plugin.enabled)
+            {
+                plugin.enabled = true;
+                plugin.Load();
+            }else
+            {
+                plugin.enabled = false;
+                plugin.Unload();
+
+            }
+        }
     }
+
+    ImGui::End();
 }
 
 void PluginManager::LoadPlugins()

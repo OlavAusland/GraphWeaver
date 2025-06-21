@@ -1,8 +1,11 @@
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 add_library(GraphWeaverAPI STATIC 
     core/EventManager.cpp 
     core/EventManager.hpp
     core/Hierarchy.hpp
     core/Entity.hpp
+    core/Scripting/Script.cpp
 
     graphics/Graphics.hpp
 )

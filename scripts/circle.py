@@ -14,13 +14,13 @@ def graph_weaver_init():
     angles = np.linspace(0, 2 * np.pi, 20)
     x = np.cos(angles)
     y = np.sin(angles)
-    
+    gw.set_color("Circle", 1.0, 1.0, 0.2, 1)
     # gw.draw_points("Initial Circle", x.tolist(), y.tolist())
 
 
 def graph_weaver_update():
     global t
-    t += 0.0001  # Controls rotation speed
+    t += 0.001  # Controls rotation speed
 
 
     # Original circle points
@@ -31,6 +31,5 @@ def graph_weaver_update():
     x_rot = x * cos_t - y * sin_t
     y_rot = x * sin_t + y * cos_t
 
-    gw.set_color(1.0, 0.5, 0.2, 1.0)
     gw.draw_points("Circle", x_rot.tolist(), y_rot.tolist())
 

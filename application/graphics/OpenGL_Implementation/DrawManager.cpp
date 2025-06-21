@@ -14,7 +14,6 @@ void DrawManager::Draw()
     for(auto const& object : objects)
     {
         object.second->Draw();
-        //printf("[ INFO ] Drawing %s\n", object.first.c_str());
     }
 }
 
@@ -30,13 +29,21 @@ const GraphWeaver::Color& DrawManager::GetActiveColor()
 
 void DrawManager::AddObject(std::string id, std::unique_ptr<DrawObject> obj)
 {
+    if(objects.find(id) != objects.end())
+    {
+        printf("[ WARNING ] Object already exists!\n");
+        return;
+    }
+
     objects[id] = std::move(obj);
 }
 
-std::unique_ptr<DrawObject>* DrawManager::GetObject(char* id)
+std::unique_ptr<DrawObject>* DrawManager::GetObject(const char* id)
 {
     if(objects.find(id) == objects.end())
+    {
         return nullptr;
+    }
 
     return &objects[id];
 }

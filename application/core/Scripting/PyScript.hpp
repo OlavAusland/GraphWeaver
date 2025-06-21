@@ -15,6 +15,8 @@ private:
     PyObject* compiled_code;
 private:
     void Compile();
+
+    void GetErrorMessage();
 public:
     PyScript(std::string file);
     void Execute() override;

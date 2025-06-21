@@ -2,6 +2,7 @@
 #include "Graphics.hpp"
 #include <algorithm>
 #include "LineObject.hpp"
+#include "PlaneObject.hpp"
 #include <glad/glad.h>
 #include <stdio.h>
 
@@ -39,7 +40,7 @@ Vec3& Canvas::GetBounds()
     return size;
 }
 
-float Canvas::GetAspect()
+const float& Canvas::GetAspect()
 {
     return aspect;
 }
@@ -56,17 +57,16 @@ void Canvas::SetAspect(const float value)
 
 void Canvas::Draw()
 {
-    static LineObject line_object(GL_LINES);
-    line_object.Clear();
-    //SetColor(0, 0, 0, 255);
-    // Draw main origo lines
-    line_object.AddPoint({0, origo.y, 0});
-    line_object.AddPoint({scale.x * aspect, origo.y, 0});
+    static PlaneObject plane;
+    plane.Clear();
 
-    line_object.AddPoint({origo.x, 0, 0});
-    line_object.AddPoint({origo.x, scale.y, 0});
+    plane.AddPoint({-origo.x + scale.x * aspect / 2.0f, -origo.y + scale.y / 2,  0});
+    plane.AddPoint({-origo.x + scale.x * aspect / 2.0f, -origo.y - scale.y / 2,  0});
+    plane.AddPoint({-origo.x - scale.x * aspect / 2.0f, -origo.y + scale.y / 2,  0});
+    plane.AddPoint({-origo.x - scale.x * aspect / 2.0f, -origo.y - scale.y / 2,  0});
 
-    line_object.Draw();
+    plane.Draw();
+
 }
 
 void Canvas::Move(const Vec3 vel)

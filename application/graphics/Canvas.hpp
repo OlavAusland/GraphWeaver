@@ -24,7 +24,7 @@ public:
     static Vec3& GetOrigo();
     static Vec3& GetScale();
     static Vec3& GetBounds();
-    static float GetAspect();
+    static const float& GetAspect();
     static void SetOrigo(const Vec3&);
     static void SetScale(const Vec3&);
     static void SetBounds(const Vec3&);

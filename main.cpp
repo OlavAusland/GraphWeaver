@@ -1,4 +1,3 @@
-#include "PointObject.hpp"
 #include "glm/fwd.hpp"
 #include "glm/trigonometric.hpp"
 #include "imgui.h"
@@ -10,19 +9,24 @@
 #include <GLFW/glfw3.h>
 #include "imgui_impl_opengl3.h"
 
-// custom libraries
+// Custom libraries
 #include "PluginManager.hpp"
 #include "Hierarchy.hpp"
 #include "Inspector.hpp"
 #include "Canvas.hpp"
 #include "Script.hpp"
 #include "Graphics.hpp"
+#include "Console.hpp"
 #include "EventManager.hpp"
 #include "Shader.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "Python.h"
+#include "ShaderManager.hpp"
 #include "DrawManager.hpp"
+#include "PlaneObject.hpp"
+#include "Camera.hpp"
+#include "PointObject.hpp"
 #include "LineObject.hpp"
 #include "Utils.hpp"
 #include "PyScript.hpp"
@@ -31,6 +35,15 @@
 static bool dragging;
 static Vec3 last_position;
 
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    static Camera& camera = GetActiveCamera();
+    
+    //camera.Move({0, 0, yoffset});
+    Canvas::Zoom({(float)yoffset, (float)yoffset, 0});
+    camera.Move({0, 0, yoffset});
+
+}
 
 static void drop_callback(GLFWwindow* window, int count, const char** paths)
 {
@@ -102,6 +115,19 @@ static void mouse_cursor_callback(GLFWwindow* window, double posX, double posY)
     }
 }
 
+void processInput(GLFWwindow *window)
+{
+    static GraphWeaver::Vec3& origo = Canvas::GetOrigo();
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        origo.y -= 0.1;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        origo.y += 0.1;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        origo.x += 0.1;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        origo.x -= 0.1;
+}
+
 // Main code
 int main(int, char**)
 {
@@ -132,14 +158,18 @@ int main(int, char**)
         return -1;
     }
 
-    glEnable(GL_PROGRAM_POINT_SIZE);  // <--- Add this!
-    glfwSwapInterval(0); // Enable vsync
+    glfwSwapInterval(1); // Enable vsync
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetScrollCallback(window, scroll_callback);
     glfwSetCursorPosCallback(window, mouse_cursor_callback);
     glfwSetDropCallback(window, drop_callback);
     glEnable(GL_MULTISAMPLE);
+
     glEnable(GL_BLEND);
+    glEnable(GL_PROGRAM_POINT_SIZE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_ALWAYS);
         
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -152,165 +182,88 @@ int main(int, char**)
     
     ImFont* font = io.Fonts->AddFontFromFileTTF("/usr/share/fonts/TTF/JetBrainsMonoNerdFont-Regular.ttf", 20 * 0.75f);
 
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
-
-    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-    ImGuiStyle& style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImVec4 clear_color = ImVec4(0.1, 0.1f, 0.1f, 1.00f);
-
-    // do opengl things
-
-    Shader shader("/home/olav/Documents/C++/GraphWeaver/shaders/default_vertex_shader.glsl",
-                    "/home/olav/Documents/C++/GraphWeaver/shaders/default_fragment_shader.glsl");
-   
-    Shader canvas_shader("/home/olav/Documents/C++/GraphWeaver/shaders/canvas_vertex.glsl",
-                            "/home/olav/Documents/C++/GraphWeaver/shaders/canvas_fragment.glsl");
     
-    Shader point_shader("/home/olav/Documents/C++/GraphWeaver/shaders/point_vertex.glsl",
-                            "/home/olav/Documents/C++/GraphWeaver/shaders/point_fragment.glsl");
+    Camera camera;
+    SetActiveCamera(camera);
 
 
-    Canvas::SetOrigo({320,240});
-    Canvas::SetScale({10, 10});
-    Canvas::SetBounds({640, 480});
-    PluginManager::LoadPlugins();
-    EventManager::Subscribe(EventType::NewFrame, Hierarchy::Update);
+    PlaneObject xz_plane;
 
-    Canvas::SetOrigo({0.0f, 0.0f, 0.0f});
+    ShaderManager::AddShader("default", "/home/olav/Documents/C++/GraphWeaver/shaders/default_vertex_shader.glsl",
+            "/home/olav/Documents/C++/GraphWeaver/shaders/default_fragment_shader.glsl");
+    ShaderManager::AddShader("grid", "/home/olav/Documents/C++/GraphWeaver/shaders/grid_vertex.glsl",
+            "/home/olav/Documents/C++/GraphWeaver/shaders/grid_fragment.glsl");
+    ShaderManager::AddShader("point", "/home/olav/Documents/C++/GraphWeaver/shaders/point_vertex.glsl",
+                           "/home/olav/Documents/C++/GraphWeaver/shaders/point_fragment.glsl");
 
-    const Vec3& origo = Canvas::GetOrigo();
+
+    xz_plane.shader = ShaderManager::GetShader("default");
+    xz_plane.shader = ShaderManager::GetShader("grid");
+    xz_plane.SetColor(1.0, 1.0, 1.0, 0.2);
+    xz_plane.AddPoint({1000, 0, 1000});
+    xz_plane.AddPoint({-1000, 0, 1000});
+    xz_plane.AddPoint({1000, 0, -1000});
+    xz_plane.AddPoint({-1000, 0, -1000});
 
     Hierarchy::AddEntity("Test");
     Hierarchy::GetEntity("Test")->AddScript("/home/olav/Documents/C++/GraphWeaver/scripts/circle.py");
-    shader.SetActive();
-
-    float angle = 0;
     
-    bool use3D = false;
-    Vec3& scale = Canvas::GetScale();
+    PluginManager::LoadPlugins();
+    Canvas::SetScale({10, 10, 0});
+    Canvas::SetOrigo({0.0f, 0.0f, 0.0f});
+    const Vec3& scale = Canvas::GetScale();
+    const Vec3& origo = Canvas::GetOrigo();
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        
+        processInput(window);
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport(0, NULL, ImGuiDockNodeFlags_PassthruCentralNode);
+        GetActiveCamera().Update();
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        Canvas::SetAspect((float)display_w / display_h);
-        //glViewport(0, 0, scale.x, scale.y);
-        //Canvas::SetBounds({(float)display_w, (float)display_h, 0.0f});
-        Canvas::SetBounds({(float)display_w, (float)display_h, 0.0f});
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-        EventManager::Notify(EventType::NewFrame);
-        PluginManager::Update();
-        
-        float aspect = (float)display_w / display_h;
-        Hierarchy::GetEntity("Test")->ExecuteAll();
-        
-        glm::mat4 proj;
-        glm::mat4 view(1.0f);
-        if(!use3D)
-        {
-            proj = glm::ortho(0.0f, (float)(scale.x) * Canvas::GetAspect(), 0.0f, (float)(scale.y), -10.0f, 1000.0f);
-        }
-        else
-        {
-            proj = glm::perspective(glm::radians(45.0f), (float)display_w / (float)display_h, 0.1f, 100000.0f);
-            glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 10.0f);
-            glm::vec3 target = glm::vec3(0.0, 0.0, 0.0);
-            glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-        
-            view = glm::lookAt(camera_pos, target, up);
-        }
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(origo.x, origo.y, 0));
-        model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        Canvas::SetBounds({(float)display_w, (float)display_h, 0});
+        Canvas::SetAspect((float)display_w / display_h);
 
-        canvas_shader.Reload();
-        canvas_shader.SetActive();
-        canvas_shader.SetUniformMatrix4fv("u_MVP", proj);
-        canvas_shader.SetUniform3f("u_color", GraphWeaver::Vec3{1.0f, 1.0f, 1.0f});
-        
-        Canvas::Draw();
-        shader.Reload();
-        shader.SetActive();
-        shader.SetUniformMatrix4fv("u_MVP", proj * view * model);
 
-       // shader.SetUniform3f("u_color", GraphWeaver::Vec3{1.0f, 0.5f, 0.2f});
-        
-        
-        //DrawManager::Draw();
-        GraphWeaver::Color color = DrawManager::GetActiveColor();
-        //color = {1.0f, 0.0, 0.0, 1.0f};
-        //shader.SetUniform3f("u_color", GraphWeaver::Vec3{1.0f, 0.5f, 0.2f});
-        shader.SetUniform4f("u_color", *(GraphWeaver::Vec4*)&color);
-        //Hierarchy::GetEntity("Test")->ExecuteAll();
-        DrawManager::Draw();
-
-        point_shader.Reload();
-        point_shader.SetActive();
-        point_shader.SetUniform3f("u_color", GraphWeaver::Vec3{1.0f, 0.5f, 0.2f});
-        point_shader.SetUniformMatrix4fv("u_MVP", proj * view * model);
-        Hierarchy::GetEntity("Test")->ExecuteAll();
-
-        DrawManager::Draw();
+        Console::Update();
+        Hierarchy::Update();
         Inspector::Update();
+        PluginManager::Update();
 
+        DrawManager::Draw();
+
+        xz_plane.Draw();
 
         ImGui::Begin("Control Panel");
-    
-        ImGui::Text("%f", io.Framerate);
 
-        ImGui::SliderFloat("Angle", &angle, 0, 360);
-        ImGui::InputFloat3("Origo", &(Canvas::GetOrigo().x));
-        ImGui::InputFloat3("Scale", &(Canvas::GetScale().x));
 
-        if(ImGui::Button("Toggle 3D"))
+        ImGui::Text("%.1f", ImGui::GetIO().Framerate);
+        
+        if(ImGui::Button("Change Perspective", ImVec2(-1, 25)))
         {
-            use3D = !use3D;
-        }
-
-        ImGui::End();
-
-        ImGui::Begin("Plugins");
-
-        std::string name = "##";
-        for(auto& entry : PluginManager::GetPlugins())
-        {
-            name.append("x");
-            if(ImGui::Button(name.c_str(), ImVec2(25, 25)))
+            if(camera.GetPerspectiveType() == ProjectionType::Perspective)
             {
-                entry.enabled = !entry.enabled;
-
-                if(!entry.enabled) { entry.Unload(); }
-                else { entry.Load(); }
+                camera.SetPerspectiveType(ProjectionType::Orthogonal);
             }
-            ImGui::SameLine();
-            ImGui::Button(entry.plugin_name.c_str(), ImVec2(-1, 25));
-            ImGui::Separator();
+            else
+            {
+                camera.SetPerspectiveType(ProjectionType::Perspective);
+            }
         }
 
         ImGui::End();
-
 
         // Rendering
         ImGui::Render();

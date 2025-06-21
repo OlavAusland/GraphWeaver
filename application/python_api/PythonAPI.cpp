@@ -9,30 +9,37 @@
 #include "Shader.hpp"
 #include "DrawManager.hpp"
 #include "PointObject.hpp"
+#include "Script.hpp"
 
 using namespace GraphWeaver;
 
+
 static PyObject* set_color(PyObject* self, PyObject* args)
 {
+    char* id;
     float r, g, b, a;
 
-    if(!PyArg_ParseTuple(args, "ffff", &r, &g, &b, &a))
+    if(!PyArg_ParseTuple(args, "sffff", &id, &r, &g, &b, &a))
     {
         Py_RETURN_NONE;
     }
-    GraphWeaver::SetColor(r,g,b,a);
+    
+    std::unique_ptr<DrawObject>* obj = DrawManager::GetObject(id);
+   
+    if(obj == nullptr || obj->get() == nullptr){ Py_RETURN_NONE; }
+    
+    (*obj)->SetColor(r, g, b, a);
 
     Py_RETURN_NONE;
 }
 
 static PyObject* draw_line(PyObject* self, PyObject* args)
 {
-    std::unique_ptr<DrawObject>* obj;
+    DrawObject* obj;
 
     char* id;
     PyObject* input_obj_x = nullptr;
     PyObject* input_obj_y = nullptr;
-
     if(!PyArg_ParseTuple(args, "sOO", &id, &input_obj_x, &input_obj_y))
     {
         Py_RETURN_NONE;
@@ -42,9 +49,11 @@ static PyObject* draw_line(PyObject* self, PyObject* args)
     {
         printf("[ INFO ] Created a new DrawObject (LineObject)\n");
         DrawManager::AddObject(id, std::make_unique<LineObject>(GL_LINE_STRIP));
+        DrawManager::GetObject(id)->get()->SetScriptOwner(GetExecutingScript());
+            
     }
-    obj = DrawManager::GetObject(id);
-    obj->get()->Clear();
+    obj = DrawManager::GetObject(id)->get();
+    obj->Clear();
 
     if(Py_TYPE(input_obj_x) != &PyList_Type)
     {
@@ -69,18 +78,14 @@ static PyObject* draw_line(PyObject* self, PyObject* args)
         
         value_x = PyFloat_AsDouble(x);
         value_y = PyFloat_AsDouble(y);
-
-        obj->get()->AddPoint({value_x, value_y, 0});
+        obj->AddPoint({value_x, value_y, 0});
     }
 
     Py_RETURN_NONE;
 }
 static PyObject* draw_points(PyObject* self, PyObject* args)
 {
-    static Shader point_shader("/home/olav/Documents/C++/GraphWeaver/shaders/point_vertex.glsl",
-                            "/home/olav/Documents/C++/GraphWeaver/shaders/point_fragment.glsl");
-
-    static const GraphWeaver::Color& color = DrawManager::GetActiveColor();
+    //static const GraphWeaver::Color& color = DrawManager::GetActiveColor();
     std::unique_ptr<DrawObject>* point_object;
 
     char* id;
@@ -101,6 +106,7 @@ static PyObject* draw_points(PyObject* self, PyObject* args)
     {
         printf("[ INFO ] Created a new DrawObject (PointObject)\n");
         DrawManager::AddObject(id, std::make_unique<PointObject>());
+        DrawManager::GetObject(id)->get()->SetScriptOwner(GetExecutingScript());
     }
     point_object = DrawManager::GetObject(id);
     point_object->get()->Clear();

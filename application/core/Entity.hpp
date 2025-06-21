@@ -12,6 +12,8 @@ private:
 private:
     void* data;
     uint64_t data_size;
+
+    bool m_is_active;
     
 public:
     Entity(std::string name);
@@ -21,6 +23,8 @@ public:
     std::string GetName() const;
 
     void AddScript(std::string file);
+    const bool IsActive() const;
+    bool* IsActivePtr();
 
     void ExecuteAll();
 };

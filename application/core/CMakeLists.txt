@@ -8,7 +8,8 @@ target_sources(${CMAKE_PROJECT_NAME}
     Hierarchy.cpp
     Entity.cpp
     Inspector.cpp
-
+    Camera.cpp
+    Console.cpp
     Scripting/Script.cpp
     Scripting/PyScript.cpp
 )

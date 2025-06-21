@@ -1,5 +1,7 @@
 #include "PyScript.hpp"
 #include "Python.h"
+#include "object.h"
+#include "pyerrors.h"
 #include <fstream>
 #include <iterator>
 #include <regex>
@@ -17,6 +19,18 @@ PyScript::PyScript(std::string file)
         printf("[ REGEX ] Matched %s\n", regex_match.str().c_str());
         filename = regex_match.str();
     }
+}
+
+void PyScript::GetErrorMessage()
+{
+    PyObject *type, *value, *traceback;
+
+    PyErr_Fetch(&type, &value, &traceback);
+    PyErr_NormalizeException(&type, &value, &traceback);
+
+    PyObject* str_exec_value = PyObject_Str(value);
+
+    info_messages.push_back(PyUnicode_AsUTF8(str_exec_value));
 }
 
 void PyScript::Compile()
@@ -42,6 +56,8 @@ void PyScript::Compile()
     {
         function_map["graph_weaver_init"] = function;
         PyObject_CallObject(function, nullptr);
+
+        PyErr_Print();
     }
 
 
@@ -57,6 +73,10 @@ void PyScript::Compile()
 
 void PyScript::Execute()
 {
+    if(!IsActive()){ printf("NOT ACTIVE\n");return; }
+    
+    SetExecutingScript(this);
+
     if(HasChanged() || compiled_code == nullptr)
     {
         Compile();

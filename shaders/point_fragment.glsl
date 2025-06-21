@@ -9,7 +9,6 @@ void main()
     
     if(dist > 0.5)
         discard;
-
     vec3 color = mix(u_color, vec3(0.1f, 0.1f, 0.1f), dist);
     float alpha = smoothstep(0.5, 0.3, dist);
 

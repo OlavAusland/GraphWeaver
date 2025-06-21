@@ -1,3 +1,4 @@
+#include <GLES2/gl2.h>
 #include <string>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -5,6 +6,7 @@
 #include <glad/glad.h>
 
 #include "Shader.hpp"
+#include "Utils.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
 Shader::Shader(std::string vertex_file, std::string fragment_file)
@@ -26,7 +28,39 @@ Shader::Shader(std::string vertex_file, std::string fragment_file)
     
     if(Compile(vertex_file, vertex_shader) && Compile(fragment_file, fragment_shader))
         CreateProgram();
+    else
+    {
+        printf("[ ERROR ] Failed to compile shader\n");
+    }
 }
+
+
+Shader& Shader::operator=(const Shader& other)
+{
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+    glDeleteProgram(shader_program);
+
+    vertex_file = other.vertex_file;
+    fragment_file = other.fragment_file;
+    vertex_info = other.vertex_info;
+    fragment_info = other.fragment_info;
+
+    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    if(Compile(vertex_file, vertex_shader) && Compile(fragment_file, fragment_shader))
+        CreateProgram();
+    else
+    {
+        printf("[ ERROR ] Failed to compile shader\n");
+    }
+
+    uniform_map.clear();
+
+    return *this;
+}
+
 
 bool Shader::HasChanged()
 {
@@ -58,6 +92,16 @@ void Shader::Reload()
     if(HasChanged())
     {
         printf("[INFO] Shader has changed, reloading!\n");
+
+        if(shader_program != 0)
+        {
+            glDeleteProgram(shader_program);
+            shader_program = 0;
+            glDeleteShader(vertex_shader);
+            vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+            glDeleteShader(fragment_shader);
+            fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        }
 
         if(Compile(vertex_file, vertex_shader) && Compile(fragment_file, fragment_shader))
             CreateProgram();
@@ -93,6 +137,10 @@ int Shader::CreateProgram()
     char infoLog[512];
 
     shader_program = glCreateProgram();
+    if(shader_program == 0)
+    {
+        printf("Failed to create program\n");
+    }
 
     glAttachShader(shader_program, vertex_shader);
     glAttachShader(shader_program, fragment_shader);
@@ -105,6 +153,11 @@ int Shader::CreateProgram()
         glGetProgramInfoLog(shader_program, 512, nullptr, infoLog);
         printf("[ERROR] Failed to create program: %s", infoLog);
     }
+
+    uniform_map.clear();
+
+    glDetachShader(shader_program, vertex_shader);
+    glDetachShader(shader_program, fragment_shader);
 
     return success;
 }
@@ -124,7 +177,6 @@ void Shader::SetUniform3f(std::string name, GraphWeaver::Vec3 value)
     if(uniform_map.find(name) == uniform_map.end())
     {
         uniform_map[name] = glGetUniformLocation(shader_program, name.c_str());
-        
     }
 
     glUniform3f(uniform_map[name], value.x, value.y, value.z);
@@ -141,12 +193,31 @@ void Shader::SetUniform4f(std::string name, GraphWeaver::Vec4 value)
     glUniform4f(uniform_map[name], value.x, value.y, value.z, value.w);
 }
 
+void Shader::SetUniform1f(std::string name, float value)
+{
+    if(uniform_map.find(name) == uniform_map.end())
+    {
+        uniform_map[name] = glGetUniformLocation(shader_program, name.c_str());
+    }
+
+    glUniform1f(uniform_map[name], value);
+}
+
+void Shader::SetUniform2f(std::string name, GraphWeaver::Vec2 value)
+{
+    if(uniform_map.find(name) == uniform_map.end())
+    {
+        uniform_map[name] = glGetUniformLocation(shader_program, name.c_str());
+    }
+
+    glUniform2f(uniform_map[name], value.x, value.y);
+}
+
 void Shader::SetUniformMatrix4fv(std::string name, glm::mat4 value)
 {
     if(uniform_map.find(name) == uniform_map.end())
     {
         uniform_map[name] = glGetUniformLocation(shader_program, name.c_str());
-        
     }
 
     glUniformMatrix4fv(uniform_map[name], 1, GL_FALSE, &value[0][0]);
@@ -155,7 +226,8 @@ void Shader::SetUniformMatrix4fv(std::string name, glm::mat4 value)
 
 Shader::~Shader()
 {
+    printf("[ INFO ] Deleting shader!\n");
+    glDeleteProgram(shader_program);
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
-    glDeleteProgram(shader_program);
 }

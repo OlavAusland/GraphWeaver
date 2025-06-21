@@ -16,6 +16,6 @@ public:
     static const GraphWeaver::Color& GetActiveColor();
 
     static void Draw();
-    static std::unique_ptr<DrawObject>* GetObject(char* id);
+    static std::unique_ptr<DrawObject>* GetObject(const char* id);
     static void AddObject(std::string id, std::unique_ptr<DrawObject> object);
 };
