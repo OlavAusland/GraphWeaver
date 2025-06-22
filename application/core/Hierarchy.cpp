@@ -52,3 +52,8 @@ Entity* Hierarchy::GetEntity(std::string name)
 
     return  nullptr;
 }
+
+const std::vector<Entity>& Hierarchy::GetEntities()
+{
+    return entities;
+}

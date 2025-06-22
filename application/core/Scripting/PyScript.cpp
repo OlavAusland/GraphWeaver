@@ -26,11 +26,22 @@ void PyScript::GetErrorMessage()
     PyObject *type, *value, *traceback;
 
     PyErr_Fetch(&type, &value, &traceback);
+
+    if(type == nullptr || value == nullptr)
+        return;
+
+    info_messages.clear();
     PyErr_NormalizeException(&type, &value, &traceback);
 
-    PyObject* str_exec_value = PyObject_Str(value);
+    PyObject* string = PyObject_Str(value);
+    
+    PyObject* error_type_obj = PyObject_GetAttrString(type, "__name__");
+    const char* error_type = PyBytes_AsString(PyUnicode_AsUTF8String(PyObject_Str(error_type_obj)));
 
-    info_messages.push_back(PyUnicode_AsUTF8(str_exec_value));
+    const char* error = PyBytes_AsString(PyUnicode_AsUTF8String(string));
+
+    info_messages.push_back(error_type);
+    info_messages.push_back(error);
 }
 
 void PyScript::Compile()
@@ -43,9 +54,12 @@ void PyScript::Compile()
     if(compiled_code == nullptr)
     {
         printf("[ ERROR ] Failed to compile: %s\n", file.c_str());
-        PyErr_Print();
+        GetErrorMessage();
+        // Do we want to do this?
         return;
     }
+
+    info_messages.clear();
     
     PyDict_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
     PyEval_EvalCode(compiled_code, globals, globals);
@@ -56,8 +70,6 @@ void PyScript::Compile()
     {
         function_map["graph_weaver_init"] = function;
         PyObject_CallObject(function, nullptr);
-
-        PyErr_Print();
     }
 
 
@@ -85,5 +97,6 @@ void PyScript::Execute()
     if(function_map["graph_weaver_update"])
     {
         PyObject_CallObject(function_map["graph_weaver_update"], nullptr);
+        GetErrorMessage();
     }
 }

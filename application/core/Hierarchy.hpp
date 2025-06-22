@@ -13,5 +13,6 @@ public:
 
     static void AddEntity(std::string name);
     static Entity* GetEntity(std::string name);
+    static const std::vector<Entity>& GetEntities();
     static void Update();
 };

@@ -13,7 +13,7 @@ protected:
     FILE* file_ptr;
 
     bool is_active;
-
+public:
     std::vector<std::string> info_messages;
 public:
     Script(std::string file);
