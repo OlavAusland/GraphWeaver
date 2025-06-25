@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <sys/stat.h>
-#include <vector>
 #include <string>
 
 class Script
@@ -14,15 +13,13 @@ protected:
 
     bool is_active;
 public:
-    std::vector<std::string> info_messages;
-public:
     Script(std::string file);
 
     void SetExecutingScript(Script* script) const;
     virtual void Execute() = 0;
     
     bool HasChanged();
-    const std::string& GetName();
+    const std::string& GetName() const;
     bool* GetIsEnableRef();
     const bool& IsActive() const;
 };

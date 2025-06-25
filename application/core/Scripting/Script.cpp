@@ -49,7 +49,7 @@ bool Script::HasChanged()
     return false;
 }
 
-const std::string& Script::GetName()
+const std::string& Script::GetName() const
 {
     return filename;
 }
