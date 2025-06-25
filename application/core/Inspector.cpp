@@ -18,13 +18,14 @@ Entity* Inspector::GetActiveEntity()
 void Inspector::Update()
 {
     if(active_entity == nullptr) { return; }
+
     char name[128] = "\0";
-    strcpy(name, active_entity->GetName().c_str());
+    strncpy(name, active_entity->GetName().c_str(), sizeof(name));
 
     ImGui::Begin("Inspector");
 
     ImGui::PushItemWidth(-1);
-    if(ImGui::InputText("##INSPECTOR_ENTITY_NAME", name, 128))
+    if(ImGui::InputText("##INSPECTOR_ENTITY_NAME", name, sizeof(name)))
     {
         active_entity->SetName(name);
     }
