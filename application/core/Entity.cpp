@@ -7,7 +7,7 @@ Entity::Entity(std::string name)
 {
 }
 
-std::string Entity::GetName() const
+const std::string& Entity::GetName() const
 {
     return name;
 }
@@ -36,8 +36,6 @@ void Entity::ExecuteAll()
 {
     for(auto const& script : scripts)
     {
-        //if(!m_is_active) { continue; }
-
         if(script->IsActive())
             script->Execute();
     }

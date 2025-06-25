@@ -19,6 +19,8 @@ PyScript::PyScript(std::string file)
         printf("[ REGEX ] Matched %s\n", regex_match.str().c_str());
         filename = regex_match.str();
     }
+
+    Compile();
 }
 
 void PyScript::GetErrorMessage()
@@ -30,7 +32,6 @@ void PyScript::GetErrorMessage()
     if(type == nullptr || value == nullptr)
         return;
 
-    info_messages.clear();
     PyErr_NormalizeException(&type, &value, &traceback);
 
     PyObject* string = PyObject_Str(value);
@@ -40,27 +41,40 @@ void PyScript::GetErrorMessage()
 
     const char* error = PyBytes_AsString(PyUnicode_AsUTF8String(string));
 
-    info_messages.push_back(error_type);
-    info_messages.push_back(error);
+    Console::AddMessage({Console::MessageType::Error,
+            filename, std::string(error_type) + std::string("\n") + std::string(error)});
+
+    Py_XDECREF(type);
+    Py_XDECREF(value);
+    Py_XDECREF(traceback);
+    Py_XDECREF(string);
 }
 
-void PyScript::Compile()
+CompileResult PyScript::Compile()
 {
     std::ifstream filestream(file); 
     std::string buffer{std::istreambuf_iterator<char>(filestream), std::istreambuf_iterator<char>()};
     
-    compiled_code = Py_CompileString(buffer.c_str(), "test", Py_file_input);
+    if(compiled_code != nullptr)
+    {
+        Py_XDECREF(compiled_code);
+        Py_XDECREF(globals);
+        globals = PyDict_New();
+        function_map.clear();
+    }
+
+    compiled_code = Py_CompileString(buffer.c_str(), filename.c_str(), Py_file_input);
 
     if(compiled_code == nullptr)
     {
-        printf("[ ERROR ] Failed to compile: %s\n", file.c_str());
+        printf("[ ERROR @ %d ] Failed to compile: %s\n", __LINE__, file.c_str());
         GetErrorMessage();
-        // Do we want to do this?
-        return;
+
+        return CompileResult::Failed;
     }
 
-    info_messages.clear();
-    
+    printf("Compile successfully\n");
+
     PyDict_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
     PyEval_EvalCode(compiled_code, globals, globals);
 
@@ -79,8 +93,9 @@ void PyScript::Compile()
     if(function)
     {
         function_map["graph_weaver_update"] = function;
-
     }
+
+    return CompileResult::Successful;
 }
 
 void PyScript::Execute()
@@ -89,7 +104,7 @@ void PyScript::Execute()
     
     SetExecutingScript(this);
 
-    if(HasChanged() || compiled_code == nullptr)
+    if(HasChanged())
     {
         Compile();
     }

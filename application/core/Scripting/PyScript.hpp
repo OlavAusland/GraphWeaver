@@ -3,6 +3,14 @@
 #include "Script.hpp"
 #include "Python.h"
 #include <unordered_map>
+#include "Console.hpp"
+
+enum class CompileResult
+{
+    Uncompiled,
+    Successful,
+    Failed,
+};
 
 class PyScript : public Script 
 {
@@ -14,7 +22,7 @@ private:
 
     PyObject* compiled_code;
 private:
-    void Compile();
+    CompileResult Compile();
 
     void GetErrorMessage();
 public:

@@ -20,7 +20,7 @@ public:
     std::vector<std::unique_ptr<Script>> scripts;
 
     void SetName(char* new_name);
-    std::string GetName() const;
+    const std::string& GetName() const;
 
     void AddScript(std::string file);
     const bool IsActive() const;
