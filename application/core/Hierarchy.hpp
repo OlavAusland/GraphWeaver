@@ -7,12 +7,12 @@
 class Hierarchy
 {
 private:
-    static std::vector<Entity> entities;
+    static std::vector<std::unique_ptr<Entity>> entities;
 public:
     Hierarchy() = delete;
 
     static void AddEntity(std::string name);
     static Entity* GetEntity(std::string name);
-    static const std::vector<Entity>& GetEntities();
+    static const std::vector<std::unique_ptr<Entity>>& GetEntities();
     static void Update();
 };

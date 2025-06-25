@@ -4,7 +4,7 @@
 #include "Entity.hpp"
 #include <vector>
 #include <string>
-std::vector<Entity> Hierarchy::entities;
+std::vector<std::unique_ptr<Entity>> Hierarchy::entities;
 
 void Hierarchy::Update()
 {
@@ -16,20 +16,20 @@ void Hierarchy::Update()
         count++;
         std::string id = "New Collection (" + std::to_string(count) + ")";
 
-        Hierarchy::AddEntity(id.c_str());
+        Hierarchy::AddEntity(id);
     }
 
     ImGui::Separator();
 
     for(auto& entity : entities)
     {
-        if(ImGui::Button(entity.GetName().c_str(), ImVec2(-1, 25)))
+        if(ImGui::Button(entity->GetName().c_str(), ImVec2(-1, 25)))
         {
-            Inspector::SetActiveEntity(&entity);
+            Inspector::SetActiveEntity(entity.get());
         }
 
         // Do we really want to execute it here?
-        entity.ExecuteAll();
+        entity->ExecuteAll();
     }
 
     ImGui::End();
@@ -37,23 +37,23 @@ void Hierarchy::Update()
 
 void Hierarchy::AddEntity(std::string name)
 {
-    entities.push_back(Entity(name));
+    entities.push_back(std::make_unique<Entity>(name));
 }
 
 Entity* Hierarchy::GetEntity(std::string name)
 {
     for(auto& entity : entities)
     {
-        if(entity.GetName() == name)
+        if(entity->GetName() == name)
         {
-            return &entity;
+            return entity.get();
         }
     }
 
     return  nullptr;
 }
 
-const std::vector<Entity>& Hierarchy::GetEntities()
+const std::vector<std::unique_ptr<Entity>>& Hierarchy::GetEntities()
 {
     return entities;
 }
