@@ -34,7 +34,6 @@ Shader::Shader(std::string vertex_file, std::string fragment_file)
     }
 }
 
-
 Shader& Shader::operator=(const Shader& other)
 {
     glDeleteShader(vertex_shader);
@@ -85,6 +84,11 @@ bool Shader::HasChanged()
     }
 
     return false;
+}
+
+void Shader::SetUniform(std::unique_ptr<ShaderUniform> uniform)
+{
+    uniforms[uniform->GetName()] = std::move(uniform);
 }
 
 void Shader::Reload()
@@ -165,6 +169,11 @@ int Shader::CreateProgram()
 void Shader::SetActive()
 {
     glUseProgram(shader_program);
+
+    for(auto const& uniform : uniforms)
+    {
+        uniform.second->Bind(this);
+    }
 }
 
 unsigned int Shader::GetProgram() const

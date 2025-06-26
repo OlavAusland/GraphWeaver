@@ -5,6 +5,11 @@
 #include <glad/glad.h>
 #include "Utils.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include "ShaderUniform.hpp"
+#include <vector>
+#include <memory>
+
+class ShaderUniform;
 
 class Shader
 {
@@ -15,6 +20,8 @@ public:
     unsigned int vertex_shader;
     unsigned int fragment_shader;
 
+    //std::vector<std::unique_ptr<ShaderUniform>> uniforms;
+    std::unordered_map<std::string, std::unique_ptr<ShaderUniform>> uniforms;
     std::unordered_map<std::string, unsigned int> uniform_map;
 private:
 public:
@@ -26,7 +33,13 @@ public:
 public:
     Shader(std::string vertex_file, std::string fragment_file);
     ~Shader();
+    Shader(const Shader& other)
+    {
+        vertex_file = other.vertex_file;
+        fragment_file = other.fragment_file;
+    }
 
+    void SetUniform(std::unique_ptr<ShaderUniform> uniform);
     void Reload();
     void SetActive();
     unsigned int GetProgram() const;
