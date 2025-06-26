@@ -8,6 +8,7 @@ target_sources(${CMAKE_PROJECT_NAME} PUBLIC
     DrawObject.cpp
     PointObject.cpp
     ShaderManager.cpp
+    ShaderUniform.cpp
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
