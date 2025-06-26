@@ -5,6 +5,7 @@ class PlaneObject : public DrawObject
 {
 public:
     PlaneObject();
+    PlaneObject(Shader shader);
 
     void Draw() override;
     void Clear() override;
