@@ -29,8 +29,8 @@
 #include "PointObject.hpp"
 #include "LineObject.hpp"
 #include "Utils.hpp"
-#include "PyScript.hpp"
-#include "imgui_internal.h"
+#include <chrono>
+#include <thread>
 
 static bool dragging;
 static Vec3 last_position;
@@ -101,7 +101,7 @@ static void mouse_cursor_callback(GLFWwindow* window, double posX, double posY)
 
     if(dragging)
     {
-        Vec3& bounds= Canvas::GetBounds();
+        Vec2& bounds= Canvas::GetBounds();
         Vec3& scale = Canvas::GetScale();
         
         float dx = last_position.x - posX;
@@ -110,8 +110,8 @@ static void mouse_cursor_callback(GLFWwindow* window, double posX, double posY)
         last_position.x = posX;
         last_position.y = posY;
         
-        origo.x -= (dx / bounds.x * scale.x) * 1.5 * Canvas::GetAspect(); // WHY 1.5!?
-        origo.y += (dy / bounds.y * scale.y) * 1.5; // WHY 1.5!?
+        origo.x -= (dx / bounds.x * scale.x) * Canvas::GetAspect();
+        origo.y += (dy / bounds.y * scale.y);
     }
 }
 
@@ -158,7 +158,7 @@ int main(int, char**)
         return -1;
     }
 
-    glfwSwapInterval(1); // Enable vsync
+    glfwSwapInterval(0); // Enable vsync
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetCursorPosCallback(window, mouse_cursor_callback);
@@ -169,7 +169,7 @@ int main(int, char**)
     glEnable(GL_PROGRAM_POINT_SIZE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_ALWAYS);
+    glDepthFunc(GL_LEQUAL);
         
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -192,7 +192,6 @@ int main(int, char**)
     SetActiveCamera(camera);
 
 
-    PlaneObject xz_plane;
 
     ShaderManager::AddShader("default", "/home/olav/Documents/C++/GraphWeaver/shaders/default_vertex_shader.glsl",
             "/home/olav/Documents/C++/GraphWeaver/shaders/default_fragment_shader.glsl");
@@ -200,15 +199,8 @@ int main(int, char**)
             "/home/olav/Documents/C++/GraphWeaver/shaders/grid_fragment.glsl");
     ShaderManager::AddShader("point", "/home/olav/Documents/C++/GraphWeaver/shaders/point_vertex.glsl",
                            "/home/olav/Documents/C++/GraphWeaver/shaders/point_fragment.glsl");
-
-
-    xz_plane.shader = ShaderManager::GetShader("default");
-    xz_plane.shader = ShaderManager::GetShader("grid");
-    xz_plane.SetColor(1.0, 1.0, 1.0, 0.2);
-    xz_plane.AddPoint({1000, 0, 1000});
-    xz_plane.AddPoint({-1000, 0, 1000});
-    xz_plane.AddPoint({1000, 0, -1000});
-    xz_plane.AddPoint({-1000, 0, -1000});
+    ShaderManager::AddShader("canvas", "/home/olav/Documents/C++/GraphWeaver/shaders/canvas_vertex.glsl",
+                           "/home/olav/Documents/C++/GraphWeaver/shaders/canvas_fragment.glsl");
 
     Hierarchy::AddEntity("Test");
     Hierarchy::GetEntity("Test")->AddScript("/home/olav/Documents/C++/GraphWeaver/scripts/circle.py");
@@ -233,10 +225,10 @@ int main(int, char**)
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        Canvas::SetBounds({(float)display_w, (float)display_h, 0});
+        Canvas::SetBounds({(float)display_w, (float)display_h});
         Canvas::SetAspect((float)display_w / display_h);
 
-
+        Canvas::Draw();
         Console::Update();
         Hierarchy::Update();
         Inspector::Update();
@@ -244,11 +236,10 @@ int main(int, char**)
 
         DrawManager::Draw();
 
-        xz_plane.Draw();
-
         ImGui::Begin("Control Panel");
 
 
+        ImGui::InputFloat2("SCALE", &Canvas::GetScale().x);
         ImGui::Text("%.1f", ImGui::GetIO().Framerate);
         
         if(ImGui::Button("Change Perspective", ImVec2(-1, 25)))
