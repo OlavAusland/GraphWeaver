@@ -110,8 +110,8 @@ static void mouse_cursor_callback(GLFWwindow* window, double posX, double posY)
         last_position.x = posX;
         last_position.y = posY;
         
-        origo.x -= (dx / bounds.x * scale.x) * Canvas::GetAspect();
-        origo.y += (dy / bounds.y * scale.y);
+        origo.x -= (dx / bounds.x * scale.x) * 1.5 * Canvas::GetAspect(); // WHY 1.5!?
+        origo.y += (dy / bounds.y * scale.y) * 1.5; // WHY 1.5!?
     }
 }
 
@@ -227,7 +227,7 @@ int main(int, char**)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         Canvas::SetBounds({(float)display_w, (float)display_h});
         Canvas::SetAspect((float)display_w / display_h);
-
+    
         Canvas::Draw();
         Console::Update();
         Hierarchy::Update();
