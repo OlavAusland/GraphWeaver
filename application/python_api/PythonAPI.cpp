@@ -65,7 +65,7 @@ static PyObject* draw_line(PyObject* self, PyObject* args)
     
     const Vec3& origo = Canvas::GetOrigo();
     const Vec3& scale = Canvas::GetScale();
-    const Vec3& bounds = Canvas::GetBounds();
+    const Vec2& bounds = Canvas::GetBounds();
     
     PyObject* x;
     PyObject* y;
@@ -116,7 +116,7 @@ static PyObject* draw_points(PyObject* self, PyObject* args)
     
     const Vec3& origo = Canvas::GetOrigo();
     const Vec3& scale = Canvas::GetScale();
-    const Vec3& bounds = Canvas::GetBounds();
+    const Vec2& bounds = Canvas::GetBounds();
     
     PyObject* x;
     PyObject* y;

@@ -29,7 +29,7 @@ void Camera::Update()
 {
     const float& aspect = Canvas::GetAspect();
     Vec3& scale         = Canvas::GetScale();
-    Vec3& bounds        = Canvas::GetBounds();
+    Vec2& bounds        = Canvas::GetBounds();
 
 
     view = glm::lookAt(position, forward, up);

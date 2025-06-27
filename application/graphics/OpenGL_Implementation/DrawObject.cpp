@@ -22,6 +22,7 @@ void DrawObject::SetScriptOwner(Script* script)
 
 void DrawObject::SetActiveShader(std::string id)
 {
+    shader = ShaderManager::GetShader(id);
 }
 
 std::vector<GraphWeaver::Vec3>& DrawObject::GetPoints()

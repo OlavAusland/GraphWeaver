@@ -13,7 +13,7 @@ private:
     static float aspect;
     static Vec3 origo;
     static Vec3 scale;
-    static Vec3 size;
+    static Vec2 size;
 public:
 
 public:
@@ -23,11 +23,11 @@ public:
     static void Draw();
     static Vec3& GetOrigo();
     static Vec3& GetScale();
-    static Vec3& GetBounds();
+    static Vec2& GetBounds();
     static const float& GetAspect();
     static void SetOrigo(const Vec3&);
     static void SetScale(const Vec3&);
-    static void SetBounds(const Vec3&);
+    static void SetBounds(const Vec2&);
     static void SetAspect(const float aspect);
 
     static void Move(const Vec3 mouse_position);

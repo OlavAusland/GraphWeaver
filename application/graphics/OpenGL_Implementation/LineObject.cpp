@@ -40,8 +40,8 @@ void LineObject::Draw()
     model = glm::translate(model, {origo.x, origo.y, origo.z});
 
     shader.SetActive();
-    shader.SetUniformMatrix4fv("u_MVP", camera() * camera.view * model);
-    shader.SetUniform4f("u_color", {color.r, color.g, color.b, 1.0});
+    shader.SetUniform(std::make_unique<Uniform<glm::mat4>>("u_MVP", camera() * camera.view * model));
+    shader.SetUniform(std::make_unique<Uniform<Vec4*>>("u_color", (Vec4*)&color));
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GraphWeaver::Vec3) * points.size(), points.data(), GL_DYNAMIC_DRAW);
